@@ -53,9 +53,12 @@ const val BASE_URL = "https://taskie-rw.herokuapp.com"
 
 class RemoteApi {
 
-  fun loginUser(userDataRequest: UserDataRequest, onUserCreated: (String?, Throwable?) -> Unit) {
+  fun loginUser(userDataRequest: UserDataRequest, onUserLoggedIn: (String?, Throwable?) -> Unit) {
+      onUserLoggedIn("token", null)
+  }
 
-      //avoid blocking main thread move API call in new thread
+  fun registerUser(userDataRequest: UserDataRequest, onUserCreated: (String?, Throwable?) -> Unit) {
+//avoid blocking main thread move API call in new thread
       Thread(Runnable {
 
           //open a connection to a specific URL (/api/register - endpoint path)
@@ -101,10 +104,6 @@ class RemoteApi {
           }
           connection.disconnect()
       }).start()
-  }
-
-  fun registerUser(userDataRequest: UserDataRequest, onUserCreated: (String?, Throwable?) -> Unit) {
-    onUserCreated("Success!", null)
   }
 
   fun getTasks(onTasksReceived: (List<Task>, Throwable?) -> Unit) {
