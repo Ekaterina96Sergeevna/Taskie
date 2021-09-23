@@ -79,17 +79,15 @@ class RegisterActivity : AppCompatActivity() {
             //check internet
             networkStatusChecker.performIfConnectedToInternet {
                 remoteApi.registerUser(
-                    UserDataRequest(
-                        email,
-                        password,
-                        username
-                    )
-                ) { message, error ->
-                    if (message != null) {
-                        toast(message)
-                        onRegisterSuccess()
-                    } else if (error != null) {
-                        onRegisterError()
+                    UserDataRequest(email, password, username)) { message, error ->
+                    //register request is on the background thread -> but we need update the UI
+                    runOnUiThread {
+                        if (message != null) {
+                            toast(message)
+                            onRegisterSuccess()
+                        } else if (error != null) {
+                            onRegisterError()
+                        }
                     }
                 }
             }
