@@ -77,10 +77,15 @@ class RemoteApi {
 
           // we can use jsonObject instead
           // val body = "{\"email\":\"${userDataRequest.email}\","+"\"password\":\"${userDataRequest.password}\"}"
+
+          /*
           val requestJson = JSONObject()
           requestJson.put("email", userDataRequest.email)
           requestJson.put("password", userDataRequest.password)
           val body = requestJson.toString()
+           */
+
+          val body = gson.toJson(userDataRequest)
 
           val bytes = body.toByteArray()
 
@@ -137,11 +142,16 @@ class RemoteApi {
           connection.doInput = true
 
           //val body = "{\"name\":\"${userDataRequest.name}\",\"email\":\"${userDataRequest.email}\","+ "\"password\":\"${userDataRequest.password}\"}"
+
+          /*
           val requestJson = JSONObject()
           requestJson.put("name", userDataRequest.name)
           requestJson.put("email", userDataRequest.email)
           requestJson.put("password", userDataRequest.password)
           val body = requestJson.toString()
+           */
+
+          val body = gson.toJson(userDataRequest)
 
           val bytes = body.toByteArray()
 
@@ -209,7 +219,8 @@ class RemoteApi {
                   }
                   //parse data and send it to the UI
                   val taskResponse = gson.fromJson(response.toString(), GetTasksResponse::class.java)
-                  onTasksReceived(taskResponse.notes, null)
+                  onTasksReceived(taskResponse.notes.filter { !it.isCompleted }, null)
+                  // completed task for UI display
 
                   // we say: parse the response as a String into a GetTasksResponse
               }
@@ -225,8 +236,44 @@ class RemoteApi {
     onTaskDeleted(null)
   }
 
-  fun completeTask(onTaskCompleted: (Throwable?) -> Unit) {
-    onTaskCompleted(null)
+  fun completeTask(taskId: String, onTaskCompleted: (Throwable?) -> Unit) {
+    Thread(Runnable {
+                                                        // ?id=$taskId - a query (name states) specify what we want to do
+                                                        // we want - complete the note with the queried ID
+                                                        // $title=$noteTitle - compare both the task ID and the note title
+        val connection = URL("$BASE_URL/api/note/complete?id=$taskId").openConnection() as HttpURLConnection
+        //send the requestMethod
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.setRequestProperty("Authorization", App.getToken())
+        connection.readTimeout = 10000
+        connection.connectTimeout = 10000
+        connection.doOutput = true
+        connection.doInput = true
+
+        try {
+            val reader = InputStreamReader(connection.inputStream)
+
+            reader.use { input ->
+                val response = StringBuilder()
+                val bufferedReader = BufferedReader(input)
+
+                bufferedReader.useLines {lines ->
+                    lines.forEach {
+                        response.append(it.trim())
+                    }
+                }
+                onTaskCompleted(null)
+
+            }
+        }catch (error: Throwable){
+            onTaskCompleted(error)
+
+        }
+
+        connection.disconnect()
+    }).start()
   }
 
   fun addTask(addTaskRequest: AddTaskRequest, onTaskCreated: (Task?, Throwable?) -> Unit) {
@@ -244,16 +291,20 @@ class RemoteApi {
           connection.doOutput = true
           connection.doInput = true
 
+          /*
           val requestJson = JSONObject()
           requestJson.put("title", addTaskRequest.title)
           requestJson.put("content", addTaskRequest.content)
           requestJson.put("taskPriority", addTaskRequest.taskPriority)
+           */
+
+          val body = gson.toJson(addTaskRequest)
 
           // try catch block -> don't crash from writing or receiving data
           try {
               //sending data
               connection.outputStream.use { outputStream ->
-                  outputStream.write(requestJson.toString().toByteArray())
+                  outputStream.write(body.toByteArray())
               }
 
               //read response from the connections input stream
