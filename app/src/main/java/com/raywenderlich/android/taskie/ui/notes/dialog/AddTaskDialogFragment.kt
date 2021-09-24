@@ -43,6 +43,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ArrayAdapter
 import androidx.fragment.app.DialogFragment
+import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.R
 import com.raywenderlich.android.taskie.model.PriorityColor
 import com.raywenderlich.android.taskie.model.Task
@@ -58,7 +59,7 @@ import kotlinx.android.synthetic.main.fragment_dialog_new_task.*
 class AddTaskDialogFragment : DialogFragment() {
 
   private var taskAddedListener: TaskAddedListener? = null
-  private val remoteApi = RemoteApi()
+  private val remoteApi = App.remoteApi
 
   //initialize
   private val networkStatusChecker by lazy {

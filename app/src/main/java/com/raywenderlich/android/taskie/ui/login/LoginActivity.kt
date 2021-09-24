@@ -54,7 +54,7 @@ import kotlinx.android.synthetic.main.activity_login.*
  */
 class LoginActivity : AppCompatActivity() {
 
-  private val remoteApi = RemoteApi()
+  private val remoteApi = App.remoteApi
 
   //initialize
   private val networkStatusChecker by lazy {

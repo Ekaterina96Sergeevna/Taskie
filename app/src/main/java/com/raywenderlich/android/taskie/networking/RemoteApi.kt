@@ -41,7 +41,13 @@ import com.raywenderlich.android.taskie.model.UserProfile
 import com.raywenderlich.android.taskie.model.request.AddTaskRequest
 import com.raywenderlich.android.taskie.model.request.UserDataRequest
 import com.raywenderlich.android.taskie.model.response.GetTasksResponse
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -55,7 +61,8 @@ import java.util.*
 
 const val BASE_URL = "https://taskie-rw.herokuapp.com"
 
-class RemoteApi {
+                //this is constructor
+class RemoteApi (private val remoteApiService: RemoteApiService){
 
     // create object Gson once
     private val gson = Gson()
@@ -127,63 +134,30 @@ class RemoteApi {
   }
 
   fun registerUser(userDataRequest: UserDataRequest, onUserCreated: (String?, Throwable?) -> Unit) {
-//avoid blocking main thread move API call in new thread
-      Thread(Runnable {
 
-          //open a connection to a specific URL (/api/register - endpoint path)
-          val connection = URL("$BASE_URL/api/register").openConnection() as HttpURLConnection
-          //send the requestMethod
-          connection.requestMethod = "POST"
-          connection.setRequestProperty("Content-Type", "application/json")
-          connection.setRequestProperty("Accept", "application/json")
-          connection.readTimeout = 10000
-          connection.connectTimeout = 10000
-          connection.doOutput = true
-          connection.doInput = true
+      val body = RequestBody.create(
+              MediaType.parse("application/json"), gson.toJson(userDataRequest)
+      )
 
-          //val body = "{\"name\":\"${userDataRequest.name}\",\"email\":\"${userDataRequest.email}\","+ "\"password\":\"${userDataRequest.password}\"}"
+      // remoteApiService.registerUser(body).execute() - is blocking
+      // give result, but we have own threading and error handling with try-catch
+      // enqueue - nonblocking asynchronous way
+      remoteApiService.registerUser(body).enqueue(object : Callback<ResponseBody> {
+          override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
 
-          /*
-          val requestJson = JSONObject()
-          requestJson.put("name", userDataRequest.name)
-          requestJson.put("email", userDataRequest.email)
-          requestJson.put("password", userDataRequest.password)
-          val body = requestJson.toString()
-           */
-
-          val body = gson.toJson(userDataRequest)
-
-          val bytes = body.toByteArray()
-
-          // try catch block -> don't crash from writing or receiving data
-          try {
-              //sending data
-              connection.outputStream.use { outputStream ->
-                  outputStream.write(bytes)
+              val message = response.body()?.string()
+              if(message == null){
+                  onUserCreated(null, NullPointerException("No response body!"))
+                  return
               }
-
-              //read response from the connections input stream
-              val reader = InputStreamReader(connection.inputStream)
-              reader.use { input ->
-                  //use for safely consuming(use) and storing(keep) all the lines from reader to a StringBuilder()
-                  val response = StringBuilder()
-                  // BufferedReader - better, avoid overwhelming the program (very much work - program is tired)
-                  val bufferedReader = BufferedReader(input)
-
-                  bufferedReader.useLines {lines ->
-                      lines.forEach {
-                          response.append(it.trim())
-                      }
-                  }
-                  //parse the register response
-                  val jsonObject = JSONObject(response.toString())
-                  onUserCreated(jsonObject.getString("message"), null)
-              }
-          }catch (error: Throwable){
-              onUserCreated(null, error)
+              onUserCreated(message, null)
           }
-          connection.disconnect()
-      }).start()
+
+          override fun onFailure(call: Call<ResponseBody>, error: Throwable) {
+              onUserCreated (null, error)
+          }
+
+      })
   }
 
   fun getTasks(onTasksReceived: (List<Task>, Throwable?) -> Unit) {
