@@ -62,6 +62,11 @@ class NotesFragment : Fragment(), AddTaskDialogFragment.TaskAddedListener,
   private val adapter by lazy { TaskAdapter(::onItemSelected) }
   private val remoteApi = RemoteApi()
 
+  // initialize
+  private val networkStatusChecker by lazy {
+    NetworkStatusChecker(activity?.getSystemService(ConnectivityManager::class.java))
+  }
+
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
       savedInstanceState: Bundle?): View? {
     return inflater.inflate(R.layout.fragment_notes, container, false)
@@ -103,11 +108,18 @@ class NotesFragment : Fragment(), AddTaskDialogFragment.TaskAddedListener,
 
   private fun getAllTasks() {
     progress.visible()
+
+    //check internet
+    networkStatusChecker.performIfConnectedToInternet {
     remoteApi.getTasks { tasks, error ->
+      // throw result in main thread
+      activity?.runOnUiThread {
       if (tasks.isNotEmpty()) {
-        onTaskListReceived(tasks)
-      } else if (error != null) {
-        onGetTasksFailed()
+          onTaskListReceived(tasks)
+          } else if (error != null) {
+          onGetTasksFailed()
+          }
+        }
       }
     }
   }
