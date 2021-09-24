@@ -65,6 +65,11 @@ class LoginActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_login)
     initUi()
+
+    // check token -> if it exists in the preferences, login again
+    if(App.getToken().isNotBlank()){
+      startActivity(MainActivity.getIntent(this))
+    }
   }
 
   private fun initUi() {

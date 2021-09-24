@@ -34,14 +34,17 @@
 
 package com.raywenderlich.android.taskie.ui.notes
 
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.raywenderlich.android.taskie.R
 import com.raywenderlich.android.taskie.model.Task
+import com.raywenderlich.android.taskie.networking.NetworkStatusChecker
 import com.raywenderlich.android.taskie.networking.RemoteApi
 import com.raywenderlich.android.taskie.ui.notes.dialog.AddTaskDialogFragment
 import com.raywenderlich.android.taskie.ui.notes.dialog.TaskOptionsDialogFragment

@@ -34,6 +34,7 @@
 
 package com.raywenderlich.android.taskie.networking
 
+import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.model.Task
 import com.raywenderlich.android.taskie.model.UserProfile
 import com.raywenderlich.android.taskie.model.request.AddTaskRequest
@@ -196,14 +197,64 @@ class RemoteApi {
   }
 
   fun addTask(addTaskRequest: AddTaskRequest, onTaskCreated: (Task?, Throwable?) -> Unit) {
-    onTaskCreated(
-        Task("id3",
-            addTaskRequest.title,
-            addTaskRequest.content,
-            false,
-            addTaskRequest.taskPriority
-        ), null
-    )
+      //avoid blocking main thread move API call in new thread
+      Thread(Runnable {
+          //open a connection to a specific URL
+          val connection = URL("$BASE_URL/api/note").openConnection() as HttpURLConnection
+          //send the requestMethod
+          connection.requestMethod = "POST"
+          connection.setRequestProperty("Content-Type", "application/json")
+          connection.setRequestProperty("Accept", "application/json")
+          connection.setRequestProperty("Authorization", App.getToken())
+          connection.readTimeout = 10000
+          connection.connectTimeout = 10000
+          connection.doOutput = true
+          connection.doInput = true
+
+          val requestJson = JSONObject()
+          requestJson.put("title", addTaskRequest.title)
+          requestJson.put("content", addTaskRequest.content)
+          requestJson.put("taskPriority", addTaskRequest.taskPriority)
+
+          // try catch block -> don't crash from writing or receiving data
+          try {
+              //sending data
+              connection.outputStream.use { outputStream ->
+                  outputStream.write(requestJson.toString().toByteArray())
+              }
+
+              //read response from the connections input stream
+              val reader = InputStreamReader(connection.inputStream)
+              reader.use { input ->
+                  //use for safely consuming(use) and storing(keep) all the lines from reader to a StringBuilder()
+                  val response = StringBuilder()
+                  // BufferedReader - better, avoid overwhelming the program (very much work - program is tired)
+                  val bufferedReader = BufferedReader(input)
+
+                  bufferedReader.useLines {lines ->
+                      lines.forEach {
+                          response.append(it.trim())
+                      }
+                  }
+
+                  val jsonObject = JSONObject(response.toString())
+
+                  //create task from jsonObject
+                  val task = Task(
+                      jsonObject.getString("id"),
+                      jsonObject.getString("title"),
+                      jsonObject.getString("content"),
+                      jsonObject.getBoolean("isCompleted"),
+                      jsonObject.getInt("taskPriority"),
+                      )
+
+                  onTaskCreated(task, null)
+              }
+          }catch (error: Throwable){
+              onTaskCreated(null, error)
+          }
+          connection.disconnect()
+      }).start()
   }
 
   fun getUserProfile(onUserProfileReceived: (UserProfile?, Throwable?) -> Unit) {
