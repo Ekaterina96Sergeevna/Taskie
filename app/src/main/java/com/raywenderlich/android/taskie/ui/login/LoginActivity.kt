@@ -90,13 +90,11 @@ class LoginActivity : AppCompatActivity() {
     //check network conditions
     networkStatusChecker.performIfConnectedToInternet {
     remoteApi.loginUser(userDataRequest) { token: String?, throwable: Throwable? ->
-      //in main thread
-      runOnUiThread {
+
       if (token != null && token.isNotBlank()) {
         onLoginSuccess(token)
           } else if (throwable != null) {
         showLoginError()
-          }
         }
       }
     }
