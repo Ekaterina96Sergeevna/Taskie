@@ -35,5 +35,8 @@
 package com.raywenderlich.android.taskie.model.response
 
 import com.raywenderlich.android.taskie.model.Task
+import com.squareup.moshi.Json
 
-data class GetTasksResponse(val notes: List<Task> = mutableListOf())
+data class GetTasksResponse(
+        @field:Json(name = "notes") val notes: List<Task> = mutableListOf()
+)

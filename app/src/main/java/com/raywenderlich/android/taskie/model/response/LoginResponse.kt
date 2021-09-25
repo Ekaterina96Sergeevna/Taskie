@@ -34,4 +34,8 @@
 
 package com.raywenderlich.android.taskie.model.response
 
-data class LoginResponse(val token: String? = "")
+import com.squareup.moshi.Json
+
+data class LoginResponse(
+        @field:Json(name = "token") val token: String? = ""
+)
