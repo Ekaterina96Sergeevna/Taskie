@@ -34,7 +34,6 @@
 
 package com.raywenderlich.android.taskie.networking
 
-import com.google.gson.Gson
 import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.model.Task
 import com.raywenderlich.android.taskie.model.UserProfile
@@ -64,8 +63,6 @@ const val BASE_URL = "https://taskie-rw.herokuapp.com"
                 //this is constructor
 class RemoteApi (private val remoteApiService: RemoteApiService){
 
-    // create object Gson once
-    private val gson = Gson()
 
   fun loginUser(userDataRequest: UserDataRequest, onUserLoggedIn: (String?, Throwable?) -> Unit) {
 
@@ -175,19 +172,12 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
               return@getTasks
           }
 
-          remoteApiService.getUserProfile(App.getToken()).enqueue(object : Callback<ResponseBody> {
-              override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                  val jsonBody = response.body()?.string()
-
-                  //check response body
-                  if (jsonBody == null) {
-                      onUserProfileReceived(null, error)
-                      return
-                  }
+          remoteApiService.getUserProfile(App.getToken()).enqueue(object : Callback<UserProfileResponse> {
+              override fun onResponse(call: Call<UserProfileResponse>, response: Response<UserProfileResponse>) {
 
                   //parse response body using JSON
-                  val userProfileResponse = gson.fromJson(jsonBody, UserProfileResponse::class.java)
-                  if (userProfileResponse.email == null || userProfileResponse.name == null) {
+                  val userProfileResponse = response.body()
+                  if (userProfileResponse?.email == null || userProfileResponse.name == null) {
                       onUserProfileReceived(null, error)
                   } else {
                       onUserProfileReceived(UserProfile(
@@ -198,7 +188,7 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
                   }
               }
 
-              override fun onFailure(call: Call<ResponseBody>, error: Throwable) {
+              override fun onFailure(call: Call<UserProfileResponse>, error: Throwable) {
                   onUserProfileReceived(null, error)
               }
           })
