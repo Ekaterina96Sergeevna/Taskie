@@ -1,8 +1,8 @@
 package com.raywenderlich.android.taskie.model.response
 
-import com.squareup.moshi.Json
+import kotlinx.serialization.Serializable
 
-// use to parse the response from the server
+@Serializable
 class CompleteNoteResponse(
-        @field:Json(name = "message") val message :  String
+        val message :  String
         )

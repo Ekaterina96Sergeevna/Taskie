@@ -34,14 +34,18 @@
 
 package com.raywenderlich.android.taskie.model.request
 
-import com.squareup.moshi.Json
+import kotlinx.serialization.Serializable
+
 
 /**
  * Represents the Add task/note API call JSON body.
  */
+
+
+@Serializable
 class AddTaskRequest(
         // we say - what the JSON property name will match the Kotlin object name
-        @field:Json(name = "title") val title: String,
-        @field:Json(name = "content") val content: String,
-        @field:Json(name = "taskPriority") val taskPriority: Int
+        val title: String,
+        val content: String,
+        val taskPriority: Int
         )

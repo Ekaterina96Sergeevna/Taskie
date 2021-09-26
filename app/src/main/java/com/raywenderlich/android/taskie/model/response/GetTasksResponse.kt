@@ -35,8 +35,9 @@
 package com.raywenderlich.android.taskie.model.response
 
 import com.raywenderlich.android.taskie.model.Task
-import com.squareup.moshi.Json
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class GetTasksResponse(
-        @field:Json(name = "notes") val notes: List<Task> = mutableListOf()
+        val notes: List<Task> = mutableListOf()
 )
