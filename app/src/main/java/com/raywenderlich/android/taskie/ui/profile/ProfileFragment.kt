@@ -35,6 +35,7 @@
 package com.raywenderlich.android.taskie.ui.profile
 
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -43,9 +44,13 @@ import androidx.fragment.app.Fragment
 import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.R
 import com.raywenderlich.android.taskie.model.Success
+import com.raywenderlich.android.taskie.networking.NetworkStatusChecker
 import com.raywenderlich.android.taskie.networking.RemoteApi
 import com.raywenderlich.android.taskie.ui.login.LoginActivity
 import kotlinx.android.synthetic.main.fragment_profile.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 /**
  * Displays the user profile information.
@@ -53,6 +58,10 @@ import kotlinx.android.synthetic.main.fragment_profile.*
 class ProfileFragment : Fragment() {
 
   private val remoteApi = App.remoteApi
+  // initialize
+  private val networkStatusChecker by lazy {
+    NetworkStatusChecker(activity?.getSystemService(ConnectivityManager::class.java))
+  }
 
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
       savedInstanceState: Bundle?): View? {
@@ -63,14 +72,17 @@ class ProfileFragment : Fragment() {
     super.onViewCreated(view, savedInstanceState)
     initUi()
 
-    remoteApi.getUserProfile { result ->
-      if (result is Success) {
-        userEmail.text = result.data.email
-        userName.text = getString(R.string.user_name_text, result.data.name)
-        numberOfNotes.text = getString(R.string.number_of_notes_text, result.data.numberOfNotes)
+    networkStatusChecker.performIfConnectedToInternet {
+      GlobalScope.launch(Dispatchers.Main) {
+        val result = remoteApi.getUserProfile()
+        if (result is Success) {
+          userEmail.text = result.data.email
+          userName.text = getString(R.string.user_name_text, result.data.name)
+          numberOfNotes.text = getString(R.string.number_of_notes_text, result.data.numberOfNotes)
+          }
+        }
       }
     }
-  }
 
   private fun initUi() {
     logOut.setOnClickListener {

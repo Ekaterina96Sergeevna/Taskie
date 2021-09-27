@@ -42,8 +42,6 @@ import com.raywenderlich.android.taskie.model.UserProfile
 import com.raywenderlich.android.taskie.model.request.AddTaskRequest
 import com.raywenderlich.android.taskie.model.request.UserDataRequest
 import com.raywenderlich.android.taskie.model.response.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -98,24 +96,12 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
       })
   }
 
-  fun getTasks(onTasksReceived: (Result<List<Task>>) -> Unit) {
-     remoteApiService.getNotes().enqueue(object : Callback<GetTasksResponse> {
-
-         override fun onResponse(call: Call<GetTasksResponse>, response: Response<GetTasksResponse>) {
-
-             val data = response.body()
-             if(data != null){
-                 onTasksReceived(Success(data.notes.filter { !it.isCompleted }))
-             } else {
-                 onTasksReceived(Failure(NullPointerException("No data available!")))
-             }
-         }
-
-         override fun onFailure(call: Call<GetTasksResponse>, error: Throwable) {
-             onTasksReceived(Failure(error))
-         }
-     })
-  }
+  suspend fun getTasks() : Result<List<Task>> = try {
+        val data = remoteApiService.getNotes()
+        Success(data.notes.filter { !it.isCompleted })
+    } catch (error: Throwable){
+        Failure(error)
+    }
 
                     //with retrofit support
   suspend fun deleteTask(taskId: String): Result<String> = try {
@@ -125,76 +111,38 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
           Failure(error)
       }
 
-  fun completeTask(taskId: String, onTaskCompleted: (Throwable?) -> Unit) {
-    remoteApiService.completeTask(taskId).enqueue(object : Callback<CompleteNoteResponse>{
-        override fun onResponse(call: Call<CompleteNoteResponse>, response: Response<CompleteNoteResponse>) {
+  suspend fun completeTask(taskId: String): Result<String>  = try{
+      val data = remoteApiService.completeTask(taskId)
+      Success(data.message!!)
+    } catch (error: Throwable) {
+      Failure(error)
+    }
 
-            val completeNoteResponse = response.body()
+  suspend fun addTask(addTaskRequest: AddTaskRequest) : Result<Task> = try {
 
-            if(completeNoteResponse?.message == null) {
-                onTaskCompleted(NullPointerException("No response!"))
-            } else {
-                onTaskCompleted(null)
-            }
-        }
+      val data = remoteApiService.addTask(addTaskRequest)
+       Success(data)
+    } catch (error: Throwable) {
+      Failure(error)
+    }
 
-        override fun onFailure(call: Call<CompleteNoteResponse>, error: Throwable) {
-            onTaskCompleted(error)
-        }
-    })
-  }
+  suspend fun getUserProfile() : Result<UserProfile> = try {
+      val notesResult = getTasks()
 
-  fun addTask(addTaskRequest: AddTaskRequest, onTaskCreated: (Result<Task>) -> Unit) {
+      if(notesResult is Failure) {
+          Failure(notesResult.error)
+      } else {
+          val notes = notesResult as Success
+          val data = remoteApiService.getUserProfile()
 
-      remoteApiService.addTask(addTaskRequest).enqueue(object : Callback<Task>{
-          override fun onResponse(call: Call<Task>, response: Response<Task>) {
-
-              val data = response.body()
-
-              if(data == null){
-                  onTaskCreated(Failure(NullPointerException("No response!")))
-              } else {
-                  onTaskCreated(Success(data))
-              }
+          if(data.email == null || data.name == null) {
+              Failure(NullPointerException("No data available!"))
+          } else {
+              Success(UserProfile(data.email, data.name, notes.data.size))
           }
-
-          override fun onFailure(call: Call<Task>, error: Throwable) {
-            onTaskCreated(Failure(error))
-          }
-
-      })
-  }
-
-  fun getUserProfile(onUserProfileReceived: (Result<UserProfile>) -> Unit) {
-      getTasks { result ->
-          if (result is Failure && result.error !is NullPointerException) {
-              onUserProfileReceived(Failure(result.error))
-              return@getTasks
-          }
-
-
-          val tasks = result as Success
-
-              remoteApiService.getUserProfile().enqueue(object : Callback<UserProfileResponse> {
-                      override fun onResponse(call: Call<UserProfileResponse>, response: Response<UserProfileResponse>) {
-
-                          //parse response body using JSON
-                          val userProfileResponse = response.body()
-                          if (userProfileResponse?.email == null || userProfileResponse.name == null) {
-                              onUserProfileReceived(Failure(NullPointerException("No data!")))
-                          } else {
-                              onUserProfileReceived(Success(UserProfile(
-                                      userProfileResponse.email,
-                                      userProfileResponse.name,
-                                      tasks.data.size)
-                              ))
-                          }
-                      }
-
-                      override fun onFailure(call: Call<UserProfileResponse>, error: Throwable) {
-                          onUserProfileReceived(Failure(error))
-                      }
-                  })
       }
-   }
+
+  } catch (error: Throwable){
+      Failure(error)
+  }
 }
