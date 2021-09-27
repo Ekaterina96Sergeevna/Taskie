@@ -17,7 +17,7 @@ fun buildClient(): OkHttpClient =
         .build()
 
 
-private val json = Json {
+private var json = Json {
     // have a more forgiving parser
     isLenient = true
     ignoreUnknownKeys = true

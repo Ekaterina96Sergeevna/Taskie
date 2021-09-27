@@ -46,6 +46,7 @@ import androidx.fragment.app.DialogFragment
 import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.R
 import com.raywenderlich.android.taskie.model.PriorityColor
+import com.raywenderlich.android.taskie.model.Success
 import com.raywenderlich.android.taskie.model.Task
 import com.raywenderlich.android.taskie.model.request.AddTaskRequest
 import com.raywenderlich.android.taskie.networking.NetworkStatusChecker
@@ -119,10 +120,10 @@ class AddTaskDialogFragment : DialogFragment() {
 
     // check internet
     networkStatusChecker.performIfConnectedToInternet {
-      remoteApi.addTask(AddTaskRequest(title, content, priority)) { task, error ->
-          if (task != null) {
-            onTaskAdded(task)
-          } else if (error != null) {
+      remoteApi.addTask(AddTaskRequest(title, content, priority)) { result ->
+          if (result is Success) {
+            onTaskAdded(result.data)
+          } else {
             onTaskAddFailed()
         }
       }
