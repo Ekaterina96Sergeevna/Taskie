@@ -117,20 +117,13 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
      })
   }
 
-                                                           // in the background thread
-  suspend fun deleteTask(taskId: String): Result<String> = withContext(Dispatchers.IO) {
-      try {
-          val data = remoteApiService.deleteNote(taskId).execute().body()
-
-          if(data?.message == null){
-              Failure(NullPointerException("No response!"))
-          }else {
-              Success(data.message)
-          }
+                    //with retrofit support
+  suspend fun deleteTask(taskId: String): Result<String> = try {
+        val data = remoteApiService.deleteNote(taskId)
+        Success(data.message)
       } catch (error: Throwable) {
           Failure(error)
       }
-  }
 
   fun completeTask(taskId: String, onTaskCompleted: (Throwable?) -> Unit) {
     remoteApiService.completeTask(taskId).enqueue(object : Callback<CompleteNoteResponse>{

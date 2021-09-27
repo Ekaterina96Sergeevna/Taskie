@@ -82,7 +82,7 @@ class NotesFragment : Fragment(), AddTaskDialogFragment.TaskAddedListener,
 
   private fun initUi() {
     progress.visible()
-    noData.visible()
+    //noData.gone()
     tasksRecyclerView.layoutManager = LinearLayoutManager(context)
     tasksRecyclerView.adapter = adapter
     getAllTasks()

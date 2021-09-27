@@ -111,7 +111,7 @@ class TaskOptionsDialogFragment : DialogFragment() {
           val result = remoteApi.deleteTask(taskId)
 
           if(result is Success){
-            taskOptionSelectedListener?.onTaskCompleted(taskId)
+            taskOptionSelectedListener?.onTaskDeleted(taskId)
           }
           dismissAllowingStateLoss()
         }
