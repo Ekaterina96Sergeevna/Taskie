@@ -42,6 +42,8 @@ import com.raywenderlich.android.taskie.model.UserProfile
 import com.raywenderlich.android.taskie.model.request.AddTaskRequest
 import com.raywenderlich.android.taskie.model.request.UserDataRequest
 import com.raywenderlich.android.taskie.model.response.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -115,23 +117,19 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
      })
   }
 
-  fun deleteTask(taskId:String, onTaskDeleted: (Result<String>) -> Unit) {
-      remoteApiService.deleteNote(taskId).enqueue(object : Callback<DeleteNoteResponse>{
-          override fun onResponse(call: Call<DeleteNoteResponse>, response: Response<DeleteNoteResponse>) {
+                                                           // in the background thread
+  suspend fun deleteTask(taskId: String): Result<String> = withContext(Dispatchers.IO) {
+      try {
+          val data = remoteApiService.deleteNote(taskId).execute().body()
 
-              val deleteNoteResponse = response.body()
-
-              if(deleteNoteResponse?.message == null) {
-                  onTaskDeleted(Failure(NullPointerException("No response!")))
-              } else {
-                  onTaskDeleted(Success(deleteNoteResponse.message))
-              }
+          if(data?.message == null){
+              Failure(NullPointerException("No response!"))
+          }else {
+              Success(data.message)
           }
-
-          override fun onFailure(call: Call<DeleteNoteResponse>, error: Throwable) {
-              onTaskDeleted(Failure(error))
-          }
-      })
+      } catch (error: Throwable) {
+          Failure(error)
+      }
   }
 
   fun completeTask(taskId: String, onTaskCompleted: (Throwable?) -> Unit) {
