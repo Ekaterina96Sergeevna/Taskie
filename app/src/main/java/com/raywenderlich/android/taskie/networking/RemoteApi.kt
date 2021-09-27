@@ -34,8 +34,6 @@
 
 package com.raywenderlich.android.taskie.networking
 
-import android.util.Log
-import com.raywenderlich.android.taskie.App
 import com.raywenderlich.android.taskie.model.Failure
 import com.raywenderlich.android.taskie.model.Result
 import com.raywenderlich.android.taskie.model.Success
@@ -99,7 +97,7 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
   }
 
   fun getTasks(onTasksReceived: (Result<List<Task>>) -> Unit) {
-     remoteApiService.getNotes(App.getToken()).enqueue(object : Callback<GetTasksResponse> {
+     remoteApiService.getNotes().enqueue(object : Callback<GetTasksResponse> {
 
          override fun onResponse(call: Call<GetTasksResponse>, response: Response<GetTasksResponse>) {
 
@@ -122,7 +120,7 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
   }
 
   fun completeTask(taskId: String, onTaskCompleted: (Throwable?) -> Unit) {
-    remoteApiService.completeTask(App.getToken(), taskId).enqueue(object : Callback<CompleteNoteResponse>{
+    remoteApiService.completeTask(taskId).enqueue(object : Callback<CompleteNoteResponse>{
         override fun onResponse(call: Call<CompleteNoteResponse>, response: Response<CompleteNoteResponse>) {
 
             val completeNoteResponse = response.body()
@@ -142,7 +140,7 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
 
   fun addTask(addTaskRequest: AddTaskRequest, onTaskCreated: (Result<Task>) -> Unit) {
 
-      remoteApiService.addTask(App.getToken(), addTaskRequest).enqueue(object : Callback<Task>{
+      remoteApiService.addTask(addTaskRequest).enqueue(object : Callback<Task>{
           override fun onResponse(call: Call<Task>, response: Response<Task>) {
 
               val data = response.body()
@@ -171,7 +169,7 @@ class RemoteApi (private val remoteApiService: RemoteApiService){
 
           val tasks = result as Success
 
-              remoteApiService.getUserProfile(App.getToken()).enqueue(object : Callback<UserProfileResponse> {
+              remoteApiService.getUserProfile().enqueue(object : Callback<UserProfileResponse> {
                       override fun onResponse(call: Call<UserProfileResponse>, response: Response<UserProfileResponse>) {
 
                           //parse response body using JSON
